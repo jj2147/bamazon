@@ -22,7 +22,7 @@ connection.connect(function(err) {
 });
 
 
-function post(){
+function post(callback){
     connection.query("SELECT * FROM products", function(err, results) {
         if (err) throw err;
 
@@ -41,6 +41,7 @@ function post(){
         });
 
         console.log(t.toString());
+        callback();
     });
 }
 
@@ -68,11 +69,8 @@ function inquire(){
     ]).then(function(answer){
         connection.query("SELECT * FROM products WHERE item_id = " + answer.item, function(err, results) {
             if (err) throw err;
-
-            console.log(typeof(results[0].stock_quantity));
-            console.log(typeof(answer.quantity));
             
-            if(parseInt(answer.quantity) < results[0].stock_quantity){
+            if(parseInt(answer.quantity) <= results[0].stock_quantity){
                 connection.query("UPDATE products SET stock_quantity = stock_quantity - ? WHERE item_id = ?",
                 [answer.quantity, answer.item],
                 function(err1, results1){
@@ -98,13 +96,14 @@ function again(){
         message: "Buy another?",
     }]).then(function(answer){
         if(answer.again){
-            post();
-            inquire();
+            post(function(){ inquire(); });
         }else{
             process.exit(0);
         }    
     });
 }
 
-post();
-inquire();
+
+post(function(){
+    inquire();
+});
